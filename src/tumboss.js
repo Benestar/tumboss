@@ -15,7 +15,7 @@ var controller = botkit.slackbot( {
 } );
 
 var klausuren = [
-	[ '2016-02-10', 'ERA' ],
+	[ '2016-08-06', 'GAD' ],
 	[ '2016-02-13', 'DS' ],
 	[ '2016-02-16', 'EIDI' ],
 	[ '2016-02-24', 'DB' ]

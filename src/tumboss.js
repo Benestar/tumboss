@@ -15,10 +15,7 @@ var controller = botkit.slackbot( {
 } );
 
 var klausuren = [
-	[ '2016-08-06', 'GAD' ],
-	[ '2016-02-13', 'DS' ],
-	[ '2016-02-16', 'EIDI' ],
-	[ '2016-02-24', 'DB' ]
+	[ '2016-08-06', 'GAD' ]
 ];
 
 var lastMessagesPerChannel = {};
@@ -44,7 +41,7 @@ controller.hears( 'tumboss', 'direct_message,direct_mention,mention,ambient', fu
 	bot.reply( message, 'Hi, I\'m Der Zerstörer' );
 } );
 
-controller.hears( [ 'mensa', 'essen', 'mittagessen', 'hunger', 'kohldampf' ], 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
+controller.hears( [ 'mensa', 'mittagessen', 'hunger', 'kohldampf' ], 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
 	bot.reply( message, { type: 'typing' } );
 	bot.api.reactions.add( {
 		name: 'essen',
@@ -71,6 +68,10 @@ controller.hears( [ 'mensa', 'essen', 'mittagessen', 'hunger', 'kohldampf' ], 'd
 } );
 
 controller.hears( [ 'lernen', 'klausur' ], 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
+	if ( !klausuren.length ) {
+		return;
+	}
+
 	var geschaffteKlausuren = [],
 		kommendeKlausuren = []
 		date = new Date(),

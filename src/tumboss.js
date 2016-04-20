@@ -58,8 +58,9 @@ controller.hears( [ '\\bessen\\b', 'mensa', 'mittagessen', 'hunger', 'kohldampf'
 			dishes.push( $( this ).find( '.beschreibung span' ).eq( 0 ).text() );
 		} );
 		
-		var dateString = date.getDate() + '. ' + ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'][date.getMonth()] + ' ' + date.getFullYear();
-		bot.reply( message, 'Mensaplan vom ' + dateString + ':\n' + dishes.join( '\n' ) );
+		var dateString = date.getDate() + '. ' + ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'][date.getMonth()] + ' ' + date.getFullYear(),
+			dishesString = dishes.join( '\n' ).replace( 'Polenta', 'Raphaela Polenta :tf:' ).replace( 'polenta', '-Raphaela Polenta :tf:' );
+		bot.reply( message, 'Mensaplan vom ' + dateString + ':\n' + dishesString );
 	} );
 	bot.reply( message, { type: 'typing' } );
 	bot.api.reactions.add( {

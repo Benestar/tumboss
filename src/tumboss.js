@@ -20,6 +20,8 @@ var klausuren = [
 
 var lastMessagesPerChannel = {};
 
+var polls = {};
+
 var bot = controller.spawn( {
 	token: token
 } ).startRTM();
@@ -103,4 +105,78 @@ controller.hears( [ 'lernen', 'klausur' ], 'direct_message,direct_mention,mentio
 		'Hurry hurry!!! Zwar ist ' + geschaffteKlausurenString + ' schon geschafft, ' +
 		'aber es sind nur noch ' + kommendeKlausurenString + '.'
 	);
+} );
+
+controller.hears( '^\!poll ', 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
+	if ( polls.hasOwnProperty( message.channel ) ) {
+		bot.reply( message, 'Sorry, there can only be one poll at a time. To close the current poll type !endpoll' );
+		return;
+	}
+
+	polls[message.channel] = {
+		options: message.text.substr( 6 ).split( /\s+/ ),
+		votes: {}
+	};
+
+	bot.reply( message, 'A new poll has been started. You can vote with !vote [option]. Available options are: ' + polls[message.channel].options );
+} );
+
+controller.hears( '^\!vote ', 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
+	var option = message.text.substr( 6 ).trim();
+
+	if ( !polls.hasOwnProperty( message.channel ) ) {
+		bot.reply( message, 'There is no active poll available. You can start one with !poll [options...]' );
+		return;
+	}
+
+	if ( polls[message.channel].options.indexOf( option ) < 0 ) {
+		bot.reply( message, 'The provided option is invalid. Available options are: ' + polls[message.channel].options );
+		return;
+	}
+
+	if ( polls[message.channel].votes.hasOwnProperty( message.user ) ) {
+		bot.reply( message, 'You already participated in this survey.' );
+		return;
+	}
+
+	polls[message.channel].votes[message.user] = option;
+} );
+
+controller.hears( '^\!endpoll', 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
+	if ( !polls.hasOwnProperty( message.channel ) ) {
+		bot.reply( message, 'There is no active poll available. You can start one with !poll [options...]' );
+		return;
+	}
+
+	var votes = polls[message.channel].votes,
+		options = polls[message.channel].options,
+		participants = Object.keys( votes ).length;
+
+	var counter = options.reduce( function( obj, key ) {
+		obj[key] = 0;
+		return obj;
+	}, {} );
+
+	for ( var user in votes ) {
+		counter[votes[user]]++;
+	}
+
+	var resultString = '';
+
+	options.sort( function( x, y ) {
+		return counter[x] - counter[y];
+	} ).forEach( function( option ) {
+		var count = counter[option],
+			percent = Math.round( count / participants * 1000 ) / 10;
+
+		resultString += '\n* ' + option + ': ' + count + ' (' + percent + '%)';
+	} );
+
+	options.sort().forEach( function( count, option ) {
+	} );
+
+	bot.reply( message, 'The poll has been ended with ' + participants + ' participants.' );
+	bot.reply( message, 'Results:' + resultString );
+
+	delete polls[message.channel];
 } );

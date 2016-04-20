@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Slack bot for TUM students",
   "dependencies": {
-    "botkit": "^0.0.5",
+    "botkit": "^0.1.0",
     "jquery": "^2.2.0",
     "jsdom": "^7.2.2",
     "request": "^2.67.0"

@@ -41,13 +41,7 @@ controller.hears( 'tumboss', 'direct_message,direct_mention,mention,ambient', fu
 	bot.reply( message, 'Hi, I\'m Der Zerstörer' );
 } );
 
-controller.hears( [ 'mensa', 'mittagessen', 'hunger', 'kohldampf' ], 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
-	bot.reply( message, { type: 'typing' } );
-	bot.api.reactions.add( {
-		name: 'essen',
-		channel: message.channel,
-		timestamp: message.ts
-	} );
+controller.hears( [ '\\bessen\\b', 'mensa', 'mittagessen', 'hunger', 'kohldampf' ], 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
 	console.log( 'Starting request for Mensa plan' );
 	request( 'http://www.studentenwerk-muenchen.de/mensa/speiseplan/speiseplan_422_-de.html', function( error, response, body ) {
 		var $ = jQuery( jsdom.jsdom( body ).defaultView ),
@@ -64,6 +58,12 @@ controller.hears( [ 'mensa', 'mittagessen', 'hunger', 'kohldampf' ], 'direct_mes
 		
 		var dateString = date.getDate() + '. ' + ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'][date.getMonth()] + ' ' + date.getFullYear();
 		bot.reply( message, 'Mensaplan vom ' + dateString + ':\n' + dishes.join( '\n' ) );
+	} );
+	bot.reply( message, { type: 'typing' } );
+	bot.api.reactions.add( {
+		name: 'essen',
+		channel: message.channel,
+		timestamp: message.ts
 	} );
 } );
 

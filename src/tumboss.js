@@ -151,33 +151,42 @@ controller.hears( '^\!endpoll', 'direct_message,direct_mention,mention,ambient',
 
 	var votes = polls[message.channel].votes,
 		options = polls[message.channel].options,
-		participants = Object.keys( votes ).length;
-
-	var counter = options.reduce( function( obj, key ) {
-		obj[key] = 0;
-		return obj;
-	}, {} );
+		participants = Object.keys( votes ).length,
+		counter = options.reduce( function( obj, key ) {
+			obj[key] = 0;
+			return obj;
+		}, {} );
 
 	for ( var user in votes ) {
 		counter[votes[user]]++;
 	}
 
-	var resultString = '';
+	bot.api.users.list( {}, function( error, result ) {
+		var resultString = '',
+			votesString = '',
+			userNames = {};
 
-	options.sort( function( x, y ) {
-		return counter[x] - counter[y];
-	} ).forEach( function( option ) {
-		var count = counter[option],
-			percent = Math.round( count / participants * 1000 ) / 10;
+		result.members.forEach( function( member ) {
+			userNames[member.id] = member.real_name;
+		} );
 
-		resultString += '\n* ' + option + ': ' + count + ' (' + percent + '%)';
+		options.sort( function( x, y ) {
+			return counter[y] - counter[x];
+		} ).forEach( function( option ) {
+			var count = counter[option],
+				percent = Math.round( count / participants * 1000 ) / 10;
+
+			resultString += '\n* ' + option + ': ' + count + ' (' + percent + '%)';
+		} );
+
+		Object.keys( votes ).forEach( function( user ) {
+			votesString += '\n* ' + userNames[user] + ': ' + votes[user];
+		} );
+
+		bot.reply( message, 'The poll has been ended with ' + participants + ' participants.' );
+		bot.reply( message, 'Results:' + resultString );
+		bot.reply( message, 'Votes: ' + votesString );
+
+		delete polls[message.channel];
 	} );
-
-	options.sort().forEach( function( count, option ) {
-	} );
-
-	bot.reply( message, 'The poll has been ended with ' + participants + ' participants.' );
-	bot.reply( message, 'Results:' + resultString );
-
-	delete polls[message.channel];
 } );

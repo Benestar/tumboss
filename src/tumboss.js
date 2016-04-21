@@ -2,6 +2,7 @@ var botkit = require( 'botkit' ),
 	request = require( 'request' ),
 	jQuery = require( 'jquery' ),
 	jsdom = require( 'jsdom' ),
+	exams = require( './exams.js' ),
 	poll = require( './poll.js' );
 
 var token = process.env.token;
@@ -15,9 +16,7 @@ var controller = botkit.slackbot( {
 	debug: false
 } );
 
-var klausuren = [
-	[ '2016-08-06', 'GAD' ]
-];
+var events = [ 'direct_message', 'direct_mention', 'mention', 'ambient' ];
 
 var lastMessagesPerChannel = {};
 
@@ -38,11 +37,11 @@ controller.on( 'rtm_close', function( bot ) {
 	bot.startRTM();
 } );
 
-controller.hears( 'tumboss', 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
+controller.hears( 'tumboss', events, function( bot, message ) {
 	bot.reply( message, 'Hi, I\'m Der Zerstörer' );
 } );
 
-controller.hears( [ '\\bessen\\b', 'mensa', 'mittagessen', 'hunger', 'kohldampf' ], 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
+controller.hears( [ '\\bessen\\b', 'mensa', 'mittagessen', 'hunger', 'kohldampf' ], events, function( bot, message ) {
 	console.log( 'Starting request for Mensa plan' );
 	request( 'http://www.studentenwerk-muenchen.de/mensa/speiseplan/speiseplan_422_-de.html', function( error, response, body ) {
 		var $ = jQuery( jsdom.jsdom( body ).defaultView ),
@@ -69,45 +68,15 @@ controller.hears( [ '\\bessen\\b', 'mensa', 'mittagessen', 'hunger', 'kohldampf'
 	} );
 } );
 
-controller.hears( [ 'lernen', 'klausur' ], 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
-	if ( !klausuren.length ) {
-		return;
+controller.hears( [ 'lernen', 'klausur' ], events, function( bot, message ) {
+	var examString = exams.getExamString();
+
+	if ( examString !== false ) {
+		bot.reply( message, examString );
 	}
-
-	var geschaffteKlausuren = [],
-		kommendeKlausuren = []
-		date = new Date(),
-		day = 24 * 60 * 60 * 1000;
-	
-	klausuren.forEach( function( klausur ) {
-		var data = {
-			name: klausur[1],
-			days: Math.floor( ( new Date( klausur[0] ) - date ) / day )
-		};
-
-		if ( data.days < 0 ) {
-			geschaffteKlausuren.push( data );
-		} else {
-			kommendeKlausuren.push( data );
-		}
-	} );
-	
-	var geschaffteKlausurenString = geschaffteKlausuren.map( function( value ) {
-		return value.name;
-	} ).join( ' und ' );
-	
-	var kommendeKlausurenString = kommendeKlausuren.map( function( value ) {
-		return value.days + ' Tage bis ' + value.name;
-	} ).join( ' und ' );
-
-	bot.reply(
-		message,
-		'Hurry hurry!!! Zwar ist ' + geschaffteKlausurenString + ' schon geschafft, ' +
-		'aber es sind nur noch ' + kommendeKlausurenString + '.'
-	);
 } );
 
-controller.hears( '^\!poll ', 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
+controller.hears( '^\!poll ', events, function( bot, message ) {
 	poll.startPoll(
 		message.channel,
 		message.text.substr( 6 ).split( /\s+/ ),
@@ -117,7 +86,7 @@ controller.hears( '^\!poll ', 'direct_message,direct_mention,mention,ambient', f
 	);
 } );
 
-controller.hears( '^\!vote ', 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
+controller.hears( '^\!vote ', events, function( bot, message ) {
 	poll.vote(
 		message.channel,
 		message.user,
@@ -128,7 +97,7 @@ controller.hears( '^\!vote ', 'direct_message,direct_mention,mention,ambient', f
 	);
 } );
 
-controller.hears( '^\!endpoll', 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
+controller.hears( '^\!endpoll', events, function( bot, message ) {
 	bot.api.users.list( {}, function( error, result ) {
 		poll.endPoll( message.channel, result.members, function( error, result ) {
 			bot.reply( message, error || result );

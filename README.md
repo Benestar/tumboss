@@ -1,4 +1,4 @@
-## Tumboss
+## Tumboss [![Build Status](https://api.travis-ci.org/Benestar/tumboss.png?branch=master)](https://travis-ci.org/Benestar/tumboss)
 
 This is a slack bot that can be used by TUM students.
 

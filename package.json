@@ -9,7 +9,7 @@
     "request": "^2.67.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "./node_modules/mocha/bin/mocha",
     "start": "env $(cat .env) node src/tumboss.js | grep -v \"No handler for  tick\"",
     "start-log": "npm run start >> tumboss.log 2>&1",
     "tumboss": "nohup npm run start-log &"
@@ -28,5 +28,9 @@
     "email": "benestar.wikimedia@gmail.com",
     "web": "https://github.com/Benestar"
   },
-  "license": "GNU GPL v2+"
+  "license": "GNU GPL v2+",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^2.4.5"
+  }
 }

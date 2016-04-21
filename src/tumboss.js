@@ -1,7 +1,8 @@
-﻿var botkit = require( 'botkit' ),
+var botkit = require( 'botkit' ),
 	request = require( 'request' ),
 	jQuery = require( 'jquery' ),
-	jsdom = require( 'jsdom' );
+	jsdom = require( 'jsdom' ),
+	poll = require( './poll.js' );
 
 var token = process.env.token;
 
@@ -19,8 +20,6 @@ var klausuren = [
 ];
 
 var lastMessagesPerChannel = {};
-
-var polls = {};
 
 var bot = controller.spawn( {
 	token: token
@@ -109,84 +108,30 @@ controller.hears( [ 'lernen', 'klausur' ], 'direct_message,direct_mention,mentio
 } );
 
 controller.hears( '^\!poll ', 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
-	if ( polls.hasOwnProperty( message.channel ) ) {
-		bot.reply( message, 'Sorry, there can only be one poll at a time. To close the current poll type !endpoll' );
-		return;
-	}
-
-	polls[message.channel] = {
-		options: message.text.substr( 6 ).split( /\s+/ ),
-		votes: {}
-	};
-
-	bot.reply( message, 'A new poll has been started. You can vote with !vote [option]. Available options are: ' + polls[message.channel].options );
+	poll.startPoll(
+		message.channel,
+		message.text.substr( 6 ).split( /\s+/ ),
+		function( error, result ) {
+			bot.reply( message, error || result );
+		}
+	);
 } );
 
 controller.hears( '^\!vote ', 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
-	var option = message.text.substr( 6 ).trim();
-
-	if ( !polls.hasOwnProperty( message.channel ) ) {
-		bot.reply( message, 'There is no active poll available. You can start one with !poll [options...]' );
-		return;
-	}
-
-	if ( polls[message.channel].options.indexOf( option ) < 0 ) {
-		bot.reply( message, 'The provided option is invalid. Available options are: ' + polls[message.channel].options );
-		return;
-	}
-
-	if ( polls[message.channel].votes.hasOwnProperty( message.user ) ) {
-		bot.reply( message, 'You already participated in this survey.' );
-		return;
-	}
-
-	polls[message.channel].votes[message.user] = option;
+	poll.vote(
+		message.channel,
+		message.user,
+		message.text.substr( 6 ).trim(),
+		function( error, result ) {
+			bot.reply( message, error || result );
+		}
+	);
 } );
 
 controller.hears( '^\!endpoll', 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
-	if ( !polls.hasOwnProperty( message.channel ) ) {
-		bot.reply( message, 'There is no active poll available. You can start one with !poll [options...]' );
-		return;
-	}
-
-	var votes = polls[message.channel].votes,
-		options = polls[message.channel].options,
-		participants = Object.keys( votes ).length,
-		counter = options.reduce( function( obj, key ) {
-			obj[key] = 0;
-			return obj;
-		}, {} );
-
-	for ( var user in votes ) {
-		counter[votes[user]]++;
-	}
-
 	bot.api.users.list( {}, function( error, result ) {
-		var resultString = '',
-			votesString = '',
-			userNames = {};
-
-		result.members.forEach( function( member ) {
-			userNames[member.id] = member.real_name;
+		poll.endPoll( message.channel, result.members, function( error, result ) {
+			bot.reply( message, error || result );
 		} );
-
-		options.sort( function( x, y ) {
-			return counter[y] - counter[x];
-		} ).forEach( function( option ) {
-			var count = counter[option],
-				percent = Math.round( count / participants * 1000 ) / 10;
-
-			resultString += '\n* ' + option + ': ' + count + ' (' + percent + '%)';
-		} );
-
-		Object.keys( votes ).forEach( function( user ) {
-			votesString += '\n* ' + userNames[user] + ': ' + votes[user];
-		} );
-
-		bot.reply( message, 'The poll has been ended with ' + participants + ' participants.' );
-		bot.reply( message, 'Results:' + resultString );
-		bot.reply( message, 'Votes: ' + votesString );
-
-		delete polls[message.channel];
 	} );
 } );

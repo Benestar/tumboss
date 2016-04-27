@@ -40,7 +40,7 @@ controller.hears( 'tumboss', events, function( bot, message ) {
 } );
 
 controller.hears( [ '\\bessen\\b', 'mensa', 'mittagessen', 'hunger', 'kohldampf' ], events, function( bot, message ) {
-	bot.reply( message, { type: 'typing' } );
+	bot.startTyping( message );
 	bot.api.reactions.add( {
 		name: 'essen',
 		channel: message.channel,
@@ -86,5 +86,16 @@ controller.hears( '^\!endpoll', events, function( bot, message ) {
 		poll.endPoll( message.channel, result.members, function( error, result ) {
 			bot.reply( message, error || result );
 		} );
+	} );
+} );
+
+controller.hears( 'cyber', events, function( bot, message ) {
+	bot.reply( message, {
+		attachments: [
+			{
+				fallback: 'Say cyber one more time',
+				image_url: 'https://cdn.meme.am/instances/55695582.jpg'
+			}
+		]
 	} );
 } );

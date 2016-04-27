@@ -7,6 +7,8 @@ var botkit = require( 'botkit' ),
 
 var token = process.env.token;
 
+var dishPlan = {};
+
 if ( !token ) {
 	console.log( 'You have to specify the token in the .env file' );
 	process.exit( 1 );
@@ -41,25 +43,41 @@ controller.hears( 'tumboss', events, function( bot, message ) {
 	bot.reply( message, 'Hi, I\'m Der Zerstörer' );
 } );
 
-controller.hears( [ '\\bessen\\b', 'mensa', 'mittagessen', 'hunger', 'kohldampf' ], events, function( bot, message ) {
-	console.log( 'Starting request for Mensa plan' );
-	request( 'http://www.studentenwerk-muenchen.de/mensa/speiseplan/speiseplan_422_-de.html', function( error, response, body ) {
-		var $ = jQuery( jsdom.jsdom( body ).defaultView ),
-			date = new Date(),
-			dishes = [];
+controller.hears( [ '\\bessen\\b', 'mensa', 'mittagessen', 'hunger', 'kohldampf' ], 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
+	date = new Date();
 
-		// move into future to get new Mensaplan on evening of that day
-		date.setHours( date.getHours() + 7 );
+	// move into future to get new Mensaplan on evening of that day if not cached
+	date.setHours( date.getHours() + 7 );
 
-		var $table = $( 'a.heute_' + date.toISOString().substring( 0, 10 ) ).parents( 'table' );
-		$table.find( 'tr' ).each( function() {
-			dishes.push( $( this ).find( '.beschreibung span' ).eq( 0 ).text() );
+	if ( dishPlan.dayKey !== date.getDay() ) {
+		console.log( 'Starting request for Mensa plan' );
+		request( 'http://www.studentenwerk-muenchen.de/mensa/speiseplan/speiseplan_422_-de.html', function( error, response, body ) {
+			var $ = jQuery( jsdom.jsdom( body ).defaultView ),
+				dishes = [];
+
+			var $table = $( 'a.heute_' + date.toISOString().substring( 0, 10 ) ).parents( 'table' );
+			$table.find( 'tr' ).each( function() {
+				dishes.push( $( this ).find( '.beschreibung span' ).eq( 0 ).text() );
+			} );
+
+			var dateString = date.getDate() + '. ' + ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'][date.getMonth()] + ' ' + date.getFullYear(),
+				dishesString = dishes.join( '\n' ).replace( 'Polenta', 'Raphaela Polenta :tf:' ).replace( 'polenta', '-Raphaela Polenta :tf:' );
+
+			dishPlan = {
+				dateString : dateString,
+				dishesString : dishesString,
+				dayKey : date.getDay()
+			};
+
+			bot.reply( message, 'Mensaplan vom ' + dateString + ':\n' + dishesString );
+
 		} );
-		
-		var dateString = date.getDate() + '. ' + ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'][date.getMonth()] + ' ' + date.getFullYear(),
-			dishesString = dishes.join( '\n' ).replace( 'Polenta', 'Raphaela Polenta :tf:' ).replace( 'polenta', '-Raphaela Polenta :tf:' );
-		bot.reply( message, 'Mensaplan vom ' + dateString + ':\n' + dishesString );
-	} );
+	}
+	else {
+		console.log( 'Fetch Mensaplan from cache' );
+		bot.reply( message, 'Mensaplan vom ' + dishPlan.dateString + ':\n' + dishPlan.dishesString );
+	}
+
 	bot.reply( message, { type: 'typing' } );
 	bot.api.reactions.add( {
 		name: 'essen',
@@ -84,7 +102,7 @@ controller.hears( '^\!poll ', events, function( bot, message ) {
 			bot.reply( message, error || result );
 		}
 	);
-} );
+}	);
 
 controller.hears( '^\!vote ', events, function( bot, message ) {
 	poll.vote(

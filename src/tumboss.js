@@ -43,8 +43,15 @@ controller.hears( 'tumboss', events, function( bot, message ) {
 	bot.reply( message, 'Hi, I\'m Der Zerstörer' );
 } );
 
-controller.hears( [ '\\bessen\\b', 'mensa', 'mittagessen', 'hunger', 'kohldampf' ], 'direct_message,direct_mention,mention,ambient', function( bot, message ) {
-	date = new Date();
+controller.hears( [ '\\bessen\\b', 'mensa', 'mittagessen', 'hunger', 'kohldampf' ], events, function( bot, message ) {
+	bot.reply( message, { type: 'typing' } );
+	bot.api.reactions.add( {
+		name: 'essen',
+		channel: message.channel,
+		timestamp: message.ts
+	} );
+
+	var date = new Date();
 
 	// move into future to get new Mensaplan on evening of that day if not cached
 	date.setHours( date.getHours() + 7 );
@@ -64,26 +71,18 @@ controller.hears( [ '\\bessen\\b', 'mensa', 'mittagessen', 'hunger', 'kohldampf'
 				dishesString = dishes.join( '\n' ).replace( 'Polenta', 'Raphaela Polenta :tf:' ).replace( 'polenta', '-Raphaela Polenta :tf:' );
 
 			dishPlan = {
-				dateString : dateString,
-				dishesString : dishesString,
-				dayKey : date.getDay()
+				dateString: dateString,
+				dishesString: dishesString,
+				dayKey: date.getDay()
 			};
 
 			bot.reply( message, 'Mensaplan vom ' + dateString + ':\n' + dishesString );
-
 		} );
 	}
 	else {
 		console.log( 'Fetch Mensaplan from cache' );
 		bot.reply( message, 'Mensaplan vom ' + dishPlan.dateString + ':\n' + dishPlan.dishesString );
 	}
-
-	bot.reply( message, { type: 'typing' } );
-	bot.api.reactions.add( {
-		name: 'essen',
-		channel: message.channel,
-		timestamp: message.ts
-	} );
 } );
 
 controller.hears( [ 'lernen', 'klausur' ], events, function( bot, message ) {

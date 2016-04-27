@@ -1,13 +1,9 @@
 var botkit = require( 'botkit' ),
-	request = require( 'request' ),
-	jQuery = require( 'jquery' ),
-	jsdom = require( 'jsdom' ),
+	dishplan = require( './dishplan.js' ),
 	exams = require( './exams.js' ),
 	poll = require( './poll.js' );
 
 var token = process.env.token;
-
-var dishPlan = {};
 
 if ( !token ) {
 	console.log( 'You have to specify the token in the .env file' );
@@ -51,38 +47,9 @@ controller.hears( [ '\\bessen\\b', 'mensa', 'mittagessen', 'hunger', 'kohldampf'
 		timestamp: message.ts
 	} );
 
-	var date = new Date();
-
-	// move into future to get new Mensaplan on evening of that day if not cached
-	date.setHours( date.getHours() + 7 );
-
-	if ( dishPlan.dayKey !== date.getDay() ) {
-		console.log( 'Starting request for Mensa plan' );
-		request( 'http://www.studentenwerk-muenchen.de/mensa/speiseplan/speiseplan_422_-de.html', function( error, response, body ) {
-			var $ = jQuery( jsdom.jsdom( body ).defaultView ),
-				dishes = [];
-
-			var $table = $( 'a.heute_' + date.toISOString().substring( 0, 10 ) ).parents( 'table' );
-			$table.find( 'tr' ).each( function() {
-				dishes.push( $( this ).find( '.beschreibung span' ).eq( 0 ).text() );
-			} );
-
-			var dateString = date.getDate() + '. ' + ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'][date.getMonth()] + ' ' + date.getFullYear(),
-				dishesString = dishes.join( '\n' ).replace( 'Polenta', 'Raphaela Polenta :tf:' ).replace( 'polenta', '-Raphaela Polenta :tf:' );
-
-			dishPlan = {
-				dateString: dateString,
-				dishesString: dishesString,
-				dayKey: date.getDay()
-			};
-
-			bot.reply( message, 'Mensaplan vom ' + dateString + ':\n' + dishesString );
-		} );
-	}
-	else {
-		console.log( 'Fetch Mensaplan from cache' );
-		bot.reply( message, 'Mensaplan vom ' + dishPlan.dateString + ':\n' + dishPlan.dishesString );
-	}
+	dishplan.fetchDishPlan( function( result ) {
+		bot.reply( message, result );
+	} );
 } );
 
 controller.hears( [ 'lernen', 'klausur' ], events, function( bot, message ) {

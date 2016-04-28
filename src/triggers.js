@@ -4,6 +4,15 @@ function Trigger( triggers ) {
 	this._triggers = triggers || [];
 }
 
+function buildRegex( regex ) {
+	try {
+		return new RegExp( regex );
+	}
+	catch ( e ) {
+		return null;
+	}
+}
+
 Trigger.prototype = {
 
 	/**
@@ -15,7 +24,11 @@ Trigger.prototype = {
 	 */
 	trigger: function( message, cb ) {
 		this._triggers.forEach( function( trigger ) {
-			if ( new RegExp( trigger[0] ).exec( message ) ) {
+			var regex = buildRegex( trigger[0] );
+
+			if ( ( regex && regex.exec( message ) ) ||
+				( !regex && message.indexOf( trigger[0] ) > -1 )
+			) {
 				cb( trigger[1] );
 			}
 		} );
@@ -27,7 +40,9 @@ Trigger.prototype = {
 	 * @param {string} result
 	 */
 	addTrigger: function( key, result ) {
-		this._triggers.push( [ key, result ] );
+		if ( key && result ) {
+			this._triggers.push( [ key, result ] );
+		}
 	},
 
 	/**

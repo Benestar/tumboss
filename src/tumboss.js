@@ -1,7 +1,8 @@
 var botkit = require( 'botkit' ),
 	dishplan = require( './dishplan.js' ),
 	exams = require( './exams.js' ),
-	poll = require( './poll.js' );
+	poll = require( './poll.js' ),
+	triggers = require( './triggers.js' );
 
 var token = process.env.token;
 
@@ -17,6 +18,12 @@ var controller = botkit.slackbot( {
 var events = [ 'direct_message', 'direct_mention', 'mention', 'ambient' ];
 
 var lastMessagesPerChannel = {};
+
+var trigger;
+
+triggers.loadTriggers( function( t ) {
+	trigger = t;
+} );
 
 var bot = controller.spawn( {
 	token: token
@@ -68,7 +75,7 @@ controller.hears( '^\!poll ', events, function( bot, message ) {
 			bot.reply( message, error || result );
 		}
 	);
-}	);
+} );
 
 controller.hears( '^\!vote ', events, function( bot, message ) {
 	poll.vote(
@@ -89,13 +96,22 @@ controller.hears( '^\!endpoll', events, function( bot, message ) {
 	} );
 } );
 
-controller.hears( 'cyber', events, function( bot, message ) {
-	bot.reply( message, {
-		attachments: [
-			{
-				fallback: 'Say cyber one more time',
-				image_url: 'https://cdn.meme.am/instances/55695582.jpg'
-			}
-		]
+controller.hears( '^\!addtrigger ', events, function( bot, message ) {
+	var parts = message.text.substr( 12 ).trim().split( /\s+/ ),
+		key = parts.shift(),
+		result = parts.join( ' ' );
+
+	trigger.addTrigger( key, result );
+	triggers.saveTriggers( trigger );
+} );
+
+controller.hears( '^\!removetriggers ', events, function( bot, message ) {
+	trigger.removeTriggers( message.text.substr( 16 ).trim() );
+	triggers.saveTriggers( trigger );
+} );
+
+controller.on( events, function( bot, message ) {
+	trigger.trigger( message.text, function( result ) {
+		bot.reply( message, result );
 	} );
 } );

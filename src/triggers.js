@@ -4,13 +4,22 @@ function Trigger( triggers ) {
 	this._triggers = triggers || [];
 }
 
-function buildRegex( regex ) {
-	try {
-		return new RegExp( regex );
+function buildRegExp( str ) {
+	if ( str.indexOf( '/' ) === 0 &&
+		str.lastIndexOf( '/' ) === str.length - 1
+	) {
+		try {
+			return new RegExp( str.substr( 1, str.length - 2 ) );
+		}
+		catch ( e ) {
+		}
 	}
-	catch ( e ) {
-		return null;
-	}
+
+	return new RegExp( '\\b' + escapeRegExp( str ) + '\\b' );
+}
+
+function escapeRegExp( str ) {
+	return str.replace( /[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&' );
 }
 
 Trigger.prototype = {
@@ -24,11 +33,9 @@ Trigger.prototype = {
 	 */
 	trigger: function( message, cb ) {
 		this._triggers.forEach( function( trigger ) {
-			var regex = buildRegex( trigger[0] );
+			var regex = buildRegExp( trigger[0] );
 
-			if ( ( regex && regex.exec( message ) ) ||
-				( !regex && message.indexOf( trigger[0] ) > -1 )
-			) {
+			if ( regex.exec( message ) ) {
 				cb( trigger[1] );
 			}
 		} );

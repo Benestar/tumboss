@@ -2,9 +2,11 @@ var botkit = require( 'botkit' ),
 	dishplan = require( './dishplan.js' ),
 	exams = require( './exams.js' ),
 	poll = require( './poll.js' ),
-	triggers = require( './triggers.js' );
+	triggers = require( './triggers.js' ),
+	weather = require( './weather.js' );
 
-var token = process.env.token;
+var token = process.env.token,
+	weatherApiKey = process.env.openweathermap;
 
 if ( !token ) {
 	console.log( 'You have to specify the token in the .env file' );
@@ -112,6 +114,22 @@ controller.hears( '^\!removetriggers ', events, function( bot, message ) {
 
 controller.on( events, function( bot, message ) {
 	trigger.trigger( message.text, function( result ) {
+		bot.reply( message, result );
+	} );
+} );
+
+controller.hears( [ 'wetter', 'weather', '\bregen', 'sonne' ], events, function( bot, message ) {
+	if ( !weatherApiKey ) {
+		return;
+	}
+
+	weather.fetchCurrentWeather( 'Garching', weatherApiKey, function( result, icon ) {
+		bot.api.reactions.add( {
+			name: 'weather-' + icon,
+			channel: message.channel,
+			timestamp: message.ts
+		} );
+
 		bot.reply( message, result );
 	} );
 } );

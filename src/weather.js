@@ -12,7 +12,7 @@ function buildWeatherReport( data ) {
 }
 
 function fetchCurrentWeather( location, apiKey, cb ) {
-	if ( cache && cache.timestamp && cache.timestamp - Date.now() < 1000 * 60 * 10 ) {
+	if ( cache && cache.timestamp && Date.now() - cache.timestamp < 1000 * 60 * 10 ) {
 		console.log( 'Loading weather information from cache' );
 		return cb && cb( cache.weatherReport, cache.icon );
 	}

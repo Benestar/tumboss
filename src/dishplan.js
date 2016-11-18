@@ -11,11 +11,6 @@ var monthNames = [
 	'August', 'September', 'Oktober', 'November', 'Dezember'
 ];
 
-var trollReplacements = [
-	[ 'Polenta', 'Raphaela Polenta' ],
-	[ 'polenta', '-Raphaela Polenta' ]
-];
-
 /**
  * @param {function} cb
  */
@@ -51,10 +46,6 @@ function requestDishPlan( date, cb ) {
 
 		var dateString = date.getDate() + '. ' + monthNames[date.getMonth()] + ' ' + date.getFullYear(),
 			dishesString = dishes.join( '\n' );
-
-		trollReplacements.forEach( function( replacement ) {
-			dishesString = dishesString.replace( replacement[0], replacement[1] + ' :tf:' );
-		} );
 
 		dishPlan = {
 			dateString: dateString,
